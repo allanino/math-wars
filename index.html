@@ -1,0 +1,128 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+  <title>Math Wars!</title>
+  <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Source+Sans+Pro">
+    <style>
+      body {
+          font-family: 'Source Sans Pro', 'Arial';
+          font-size: 24px;
+          background-color: #000000;
+        }
+      canvas { /* Just to get rid of selected text when click */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        outline: none;
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0); /* mobile webkit */
+        background-color: #000000;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="myCanvas" width="600" height="400"></canvas>
+
+    <script>
+      var canvas = document.getElementById('myCanvas');
+      var ctx = canvas.getContext('2d');
+      ctx.canvas.width  = window.innerWidth;
+      ctx.canvas.height = window.innerHeight;
+
+      var imageAsteroid = new Image();
+
+      // I have to figure out copyright of images. At least I'm showing the original sources. None are mine.
+      imageAsteroid.src = 'http://www.aqueduct-santa-dash.co.uk/img/items/asteroid.svg'
+
+
+      var FPS = 30;
+      setInterval(function() {
+        update();
+        draw();
+      }, 1000/FPS);
+
+      var scalingFactor = 1.03;
+      var maximumSize = 600;
+
+      function Asteroid(x, y, size) {
+        this.size = size;
+        this.x = x;
+        this.y = y;
+        this.scalingFactor = scalingFactor + Math.random()*0;
+
+        this.draw = function() {
+          ctx.drawImage(imageAsteroid, this.x, this.y, this.size, this.size);
+        },
+        this.update = function() {
+          this.size *= this.scalingFactor;
+        }
+      }
+
+
+      function compareSizes(a, b) {
+        if (a.size < b.size)
+           return -1;
+        if (a.size > b.size)
+          return 1;
+        return 0;
+      }
+
+      var asteroids = [];
+      asteroids.push(new Asteroid(300,300,30));
+      asteroids.push(new Asteroid(0,0,50));
+      asteroids.push(new Asteroid(0,200,100));
+
+      function preShake() {
+        ctx.save();
+        var dx = Math.random()*20;
+        var dy = Math.random()*20;
+        ctx.translate(dx, dy);
+      }
+
+      function postShake() {
+        ctx.restore();
+      }
+
+      var shakeFrames = 7;
+      var toShake = shakeFrames + 1;
+      function update() {
+        asteroids.forEach(function(asteroid) {
+          asteroid.update();
+        });
+
+        // Remove too big asteroids
+        toShake += 1;
+        for (var i = asteroids.length -1; i >= 0; i--) {
+          if (asteroids[i].size > maximumSize) {
+            asteroids.splice(i, 1);
+            toShake = 0;
+            asteroids.push(new Asteroid(Math.random()*(ctx.canvas.width - 200), Math.random()*(ctx.canvas.height - 200), Math.random()*100));
+          }
+        };
+      };
+
+      function draw() {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        // Put greater asteroids in front
+        asteroids.sort(compareSizes);
+
+        // Shake screen if recently hit
+        if(toShake <= shakeFrames){
+          preShake();
+          asteroids.forEach(function(asteroid) {
+            asteroid.draw();
+          });
+          postShake();
+        } else {
+          asteroids.forEach(function(asteroid) {
+            asteroid.draw();
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
