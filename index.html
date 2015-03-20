@@ -40,8 +40,8 @@
       // Draw backgroud
       var canvas = document.getElementById('layer1');
       var ctx = canvas.getContext('2d');
-      ctx.canvas.width  = window.innerWidth - 25;
-      ctx.canvas.height = window.innerHeight - 25;
+      ctx.canvas.width  = window.innerWidth ;
+      ctx.canvas.height = window.innerHeight;
 
       ctx.fillStyle="#EEEEEE";
       for(var i = 1; i <= 100; i++){
@@ -51,8 +51,8 @@
       // Get main canvas
       canvas = document.getElementById('layer2');
       ctx = canvas.getContext('2d');
-      ctx.canvas.width  = window.innerWidth;
-      ctx.canvas.height = window.innerHeight;
+      ctx.canvas.width  = window.innerWidth - 25;
+      ctx.canvas.height = window.innerHeight - 25;
 
       // Prevent browser to using backspace
       function preventBackspaceHandler(evt) {
