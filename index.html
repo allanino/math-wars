@@ -54,6 +54,46 @@
       ctx.canvas.width  = window.innerWidth;
       ctx.canvas.height = window.innerHeight;
 
+      // Prevent browser to using backspace
+      function preventBackspaceHandler(evt) {
+          evt = evt || window.event;
+          if (evt.keyCode == 8) {
+              return false;
+          }
+      }
+      document.onkeydown = preventBackspaceHandler;
+
+      // Do things when key is pressed
+      function doKeyDown(e) {
+        e = e || window.event;
+
+        //  backspace
+        if ( e.keyCode == 8 ) {
+          gameState.input = gameState.input.substring(0, gameState.input.length - 1);
+        };
+        // Handle numbers
+        if ( e.keyCode <= 57 && e.keyCode >= 48) {
+          gameState.input += e.keyCode - 48;
+        }
+        // Handle numpad numbers
+        if ( e.keyCode <= 105 && e.keyCode >= 96) {
+          gameState.input += e.keyCode - 96;
+        }
+        //handle enter
+        if ( e.keyCode == 13 ) {
+          // Reverse to get bigger asteroids first
+          asteroids.reverse().forEach(function(asteroid) {
+            if(asteroid.number == parseInt(gameState.input)){
+                asteroid.hit();
+            }
+          });
+          gameState.input = "";
+        }
+      }
+
+      window.addEventListener( "keydown", doKeyDown, false);
+
+
       var imageAsteroid = new Image();
 
       // I have to figure out copyright of images. At least I'm showing the original sources. None are mine.
@@ -65,7 +105,7 @@
         draw();
       }, 1000/FPS);
 
-      var scalingFactor = 1.01;
+      var scalingFactor = 1.025;
       var maximumSize = 600;
       var shakeFrames = 7;
       var toShake = shakeFrames + 1;
@@ -74,7 +114,8 @@
 
       var gameState = {
         damage: 0,
-        score: 0
+        score: 0,
+        input: ""
       };
 
       function Asteroid(x, y, size) {
@@ -84,8 +125,15 @@
         this.y = y;
         this.scalingFactor = scalingFactor + Math.random()*0;
 
+        // Operation to perform
+        this.text = Math.round(Math.random()*10) + " + " + Math.round(Math.random()*10);
+        this.number = eval(this.text);
+
         this.draw = function() {
           ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
+          ctx.font = "bold " + this.size/8 + "px Arial";
+          ctx.fillStyle = "DarkGreen";
+          ctx.fillText(this.text, this.x + this.size/2.4, this.y + this.size/2);
         },
 
         this.update = function() {
@@ -103,7 +151,8 @@
         },
 
         this.hit= function() {
-          this.image = imageBrokenAsteroid;
+          gameState.score += 1;
+          asteroids.splice(asteroids.indexOf(this), 1);
         };
       }
 
@@ -152,7 +201,8 @@
         ctx.fillText("Damage: " + gameState.damage, 30, 30);
         ctx.fillStyle = "blue";
         ctx.fillText("Score: " + gameState.score, 30, 60);
-
+        ctx.fillStyle = "green";
+        ctx.fillText("Input: " + gameState.input, 30, 120);
         // Put greater asteroids in front
         asteroids.sort(compareAsteroidSizes);
 
