@@ -37,6 +37,11 @@
   </div>
 
     <script>
+      // Play music!
+      music = new Audio('soundtrack.ogg');
+      music.loop = true;
+      music.play();
+
       // Draw backgroud
       var canvas = document.getElementById('layer1');
       var ctx = canvas.getContext('2d');
@@ -65,29 +70,39 @@
 
       // Do things when key is pressed
       function doKeyDown(e) {
-        e = e || window.event;
 
-        //  backspace
-        if ( e.keyCode == 8 ) {
-          gameState.input = gameState.input.substring(0, gameState.input.length - 1);
-        };
-        // Handle numbers
-        if ( e.keyCode <= 57 && e.keyCode >= 48) {
-          gameState.input += e.keyCode - 48;
+        if(!gameState.paused){
+          //  backspace
+          if ( e.keyCode == 8 ) {
+            gameState.input = gameState.input.substring(0, gameState.input.length - 1);
+          };
+          // Handle numbers
+          if ( e.keyCode <= 57 && e.keyCode >= 48) {
+            gameState.input += e.keyCode - 48;
+          }
+          // Handle numpad numbers
+          if ( e.keyCode <= 105 && e.keyCode >= 96) {
+            gameState.input += e.keyCode - 96;
+          }
+          //handle enter
+          if ( e.keyCode == 13 ) {
+            // Reverse to get bigger asteroids first
+            asteroids.reverse().forEach(function(asteroid) {
+              if(asteroid.number == parseInt(gameState.input)){
+                  asteroid.hit();
+              }
+            });
+            gameState.input = "";
+          }
         }
-        // Handle numpad numbers
-        if ( e.keyCode <= 105 && e.keyCode >= 96) {
-          gameState.input += e.keyCode - 96;
-        }
-        //handle enter
-        if ( e.keyCode == 13 ) {
-          // Reverse to get bigger asteroids first
-          asteroids.reverse().forEach(function(asteroid) {
-            if(asteroid.number == parseInt(gameState.input)){
-                asteroid.hit();
-            }
-          });
-          gameState.input = "";
+        //handle esc
+        if ( e.keyCode == 27 ) {
+          if(gameState.pause){
+
+          } else {
+
+          };
+          gameState.paused = !gameState.paused;
         }
       }
 
@@ -101,8 +116,10 @@
 
       var FPS = 30;
       setInterval(function() {
-        update();
-        draw();
+        if(!gameState.paused){
+          update();
+          draw();
+        }
       }, 1000/FPS);
 
       var scalingFactor = 1.025;
@@ -115,7 +132,8 @@
       var gameState = {
         damage: 0,
         score: 0,
-        input: ""
+        input: "",
+        paused: false
       };
 
       function Asteroid(x, y, size) {
