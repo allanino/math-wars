@@ -65,12 +65,17 @@
         draw();
       }, 1000/FPS);
 
-      var scalingFactor = 1.03;
+      var scalingFactor = 1.01;
       var maximumSize = 600;
       var shakeFrames = 7;
       var toShake = shakeFrames + 1;
 
       var asteroids = [];
+
+      var gameState = {
+        damage: 0,
+        score: 0
+      };
 
       function Asteroid(x, y, size) {
         this.image = imageAsteroid
@@ -91,6 +96,7 @@
 
             // If size is big and is alive, we're hit!!
             if(this.image == imageAsteroid){
+              gameState.damage += 1
               toShake = 0;
             }
           }
@@ -109,9 +115,9 @@
         return 0;
       }
 
-      asteroids.push(new Asteroid(300,300,30));
-      asteroids.push(new Asteroid(0,0,50));
-      asteroids.push(new Asteroid(0,200,100));
+      for(var i = 1; i <= 3; i++){
+        asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), Math.random()*100));
+      };
 
       function preShake() {
         ctx.save();
@@ -134,12 +140,18 @@
 
         // Add more asteroids if needed
         if(asteroids.length < 3){
-          asteroids.push(new Asteroid(Math.random()*(ctx.canvas.width - 200), Math.random()*(ctx.canvas.height - 200), Math.random()*100));
+          asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), 10));
         };
       };
 
       function draw() {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        ctx.font = "bold 24px Arial";
+        ctx.fillStyle = "purple";
+        ctx.fillText("Damage: " + gameState.damage, 30, 30);
+        ctx.fillStyle = "blue";
+        ctx.fillText("Score: " + gameState.score, 30, 60);
 
         // Put greater asteroids in front
         asteroids.sort(compareAsteroidSizes);
