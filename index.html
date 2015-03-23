@@ -50,11 +50,6 @@
     </script>
 
     <script>
-      // Play music!
-      //var music = new Audio('soundtrack.ogg');
-      //music.loop = true;
-      //music.play();
-
       // Draw backgroud
       var canvas = document.getElementById('layer1');
       var ctx = canvas.getContext('2d');
@@ -274,6 +269,11 @@
 
       // Main loop
       window.onload = function(){
+        // Play music!
+        var music = new Audio('soundtrack.ogg');
+        music.loop = true;
+        music.play();
+
         setInterval(function() {
           if(!gameState.paused){
             update();
