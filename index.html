@@ -37,10 +37,23 @@
   </div>
 
     <script>
+      // Dirty hacks
+
+      // Prevent browser to using backspace
+      function preventBackspaceHandler(evt) {
+          evt = evt || window.event;
+          if (evt.keyCode == 8) {
+              return false;
+          }
+      }
+      document.onkeydown = preventBackspaceHandler;
+    </script>
+
+    <script>
       // Play music!
-      var music = new Audio('soundtrack.ogg');
-      music.loop = true;
-      music.play();
+      //var music = new Audio('soundtrack.ogg');
+      //music.loop = true;
+      //music.play();
 
       // Draw backgroud
       var canvas = document.getElementById('layer1');
@@ -59,14 +72,34 @@
       ctx.canvas.width  = window.innerWidth;
       ctx.canvas.height = window.innerHeight;
 
-      // Prevent browser to using backspace
-      function preventBackspaceHandler(evt) {
-          evt = evt || window.event;
-          if (evt.keyCode == 8) {
-              return false;
-          }
+      // Functions to generate mathematical operations
+      function sum(length){
+        return Math.round(Math.random()*Math.pow(10, length)) + " + " + Math.round(Math.random()*Math.pow(10, length));
       }
-      document.onkeydown = preventBackspaceHandler;
+
+      function mul(numberArr, length){
+        return numberArr[Math.round(Math.random()*(numberArr.length - 1))] + " * " + Math.round(Math.random()*Math.pow(10, length));
+      }
+
+      var imageAsteroid = new Image();
+      imageAsteroid.src = 'asteroid.svg'
+
+      var gameState = {
+        damage: 0,
+        score: 0,
+        input: "", // User text input: the answer to the calculations
+        paused: false,
+        shakeFrame: -1, // Counter to keep track if we should shake the screen
+        asteroids: [] // List with active asteroids
+      };
+
+      var gameConfig = {
+        fps: 30,
+        asteroidsMaximumSize: 700, // Size in which we consider we are hitted
+        scalingFactor: 1.015, // Effectively sets the speed of the asteroids
+        framesToShake: 7, // For how many frames the screen is shaked when hitted
+        aimSize: 60
+      }
 
       // Do things when key is pressed
       function doKeyDown(e) {
@@ -87,7 +120,7 @@
           //handle enter
           if ( e.keyCode == 13 ) {
             // Reverse to get bigger asteroids first
-            asteroids.reverse().forEach(function(asteroid) {
+            gameState.asteroids.reverse().forEach(function(asteroid) {
               if(asteroid.number == parseInt(gameState.input)){
                   asteroid.hit();
               }
@@ -97,7 +130,7 @@
         }
         //handle esc
         if ( e.keyCode == 27 ) {
-          if(gameState.pause){
+          if(gameState.paused){
 
           } else {
 
@@ -108,69 +141,72 @@
 
       window.addEventListener( "keydown", doKeyDown, false);
 
-
-      var imageAsteroid = new Image();
-
-      // I have to figure out copyright of images. At least I'm showing the original sources. None are mine.
-      imageAsteroid.src = 'asteroid.svg'
-
-      var FPS = 30;
-      setInterval(function() {
-        if(!gameState.paused){
-          update();
-          draw();
-        }
-      }, 1000/FPS);
-
-      var scalingFactor = 1.025;
-      var maximumSize = 600;
-      var shakeFrames = 7;
-      var toShake = shakeFrames + 1;
-
-      var asteroids = [];
-
-      var gameState = {
-        damage: 0,
-        score: 0,
-        input: "",
-        paused: false
-      };
-
+      // Asteroid class
       function Asteroid(x, y, size) {
         this.image = imageAsteroid
         this.size = size;
         this.x = x;
         this.y = y;
-        this.scalingFactor = scalingFactor + Math.random()*0;
+        this.scalingFactor = gameConfig.scalingFactor + Math.random()*0;
 
         // Operation to perform
-        this.text = Math.round(Math.random()*10) + " + " + Math.round(Math.random()*10);
+        this.text = mul([1,2,3,4,5,6,7,8,9], 1);
         this.number = eval(this.text);
 
+        // Get lines to display
+        var n = this.text.split(" * ");
+        this.line1 = n[1].toString();
+        this.line2 = n[0].toString();
+        if(this.line1.length > this.line2.length){
+          this.line2 = ("      " + this.line2).slice(-this.line1.length);
+        }
+        this.line1 = " " + this.line1;
+        this.line2 = "x" + this.line2;
+
         this.draw = function() {
+          // Draw asteroid
           ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
-          ctx.font = "bold " + this.size/8 + "px Arial";
+
+          // Draw aim
+          ctx.beginPath();
+          ctx.arc(this.x + this.size/2, this.y + this.size/2, gameConfig.aimSize, 0, 2 * Math.PI, false);
+          ctx.fillStyle = 'rgba(0,100,0,0.25)';
+          ctx.fill();
+          ctx.lineWidth = 5;
+          ctx.moveTo(this.x + this.size/2 - 60, this.y + this.size/2);
+          ctx.lineTo(this.x + this.size/2 - 45,this.y + this.size/2);
+          ctx.moveTo(this.x + this.size/2 + 60, this.y + this.size/2);
+          ctx.lineTo(this.x + this.size/2 + 45,this.y + this.size/2);
+          ctx.moveTo(this.x + this.size/2, this.y + this.size/2 - 60);
+          ctx.lineTo(this.x + this.size/2, this.y + this.size/2 - 45);
+          ctx.moveTo(this.x + this.size/2, this.y + this.size/2 + 60);
+          ctx.lineTo(this.x + this.size/2, this.y + this.size/2 + 45);
+          ctx.strokeStyle = 'green';
+          ctx.stroke();
+
+          ctx.font = "bold " + gameConfig.aimSize/2 + "px Courier";
           ctx.fillStyle = "DarkGreen";
-          ctx.fillText(this.text, this.x + this.size/2.4, this.y + this.size/2);
+          ctx.fillText(this.line1, this.x + this.size/2 - 30, this.y + this.size/2);
+          ctx.fillText(this.line2, this.x + this.size/2 - 30, this.y + this.size/2 + 25);
         },
 
         this.update = function() {
           this.size *= this.scalingFactor;
-          if(this.size > maximumSize){
+          if(this.size > gameConfig.asteroidsMaximumSize){
             // Remove itself from asteroids list
-            asteroids.splice(asteroids.indexOf(this), 1);
+            gameState.asteroids.splice(gameState.asteroids.indexOf(this), 1);
 
             // If size is big and is alive, we're hit!!
             if(this.image == imageAsteroid){
               gameState.damage += 1
-              toShake = 0;
+              gameState.shakeFrame = gameConfig.framesToShake;
             }
           }
         },
 
         this.hit= function() {
           gameState.score += 1;
-          asteroids.splice(asteroids.indexOf(this), 1);
+          gameState.asteroids.splice(gameState.asteroids.indexOf(this), 1);
         };
       }
 
@@ -183,10 +219,11 @@
       }
 
       for(var i = 1; i <= 3; i++){
-        asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), Math.random()*50));
+        gameState.asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), Math.random()*50));
       };
 
       function preShake() {
+        gameState.shakeFrame -= 1;
         ctx.save();
         var dx = Math.random()*20;
         var dy = Math.random()*20;
@@ -198,16 +235,13 @@
       }
 
       function update() {
-        // Increment shake frames counter
-        toShake += 1
-
-        asteroids.forEach(function(asteroid) {
+        gameState.asteroids.forEach(function(asteroid) {
           asteroid.update();
         });
 
         // Add more asteroids if needed
-        if(asteroids.length < 3){
-          asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), 10));
+        if(gameState.asteroids.length < 3){
+          gameState.asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), 10));
         };
       };
 
@@ -222,20 +256,30 @@
         ctx.fillStyle = "green";
         ctx.fillText("Input: " + gameState.input, 30, 120);
         // Put greater asteroids in front
-        asteroids.sort(compareAsteroidSizes);
+        gameState.asteroids.sort(compareAsteroidSizes);
 
         // Shake screen if recently hit
-        if(toShake <= shakeFrames){
+        if(gameState.shakeFrame > 0){
           preShake();
-          asteroids.forEach(function(asteroid) {
+          gameState.asteroids.forEach(function(asteroid) {
             asteroid.draw();
           });
           postShake();
         } else {
-          asteroids.forEach(function(asteroid) {
+          gameState.asteroids.forEach(function(asteroid) {
             asteroid.draw();
           });
         };
+      }
+
+      // Main loop
+      window.onload = function(){
+        setInterval(function() {
+          if(!gameState.paused){
+            update();
+            draw();
+          }
+        }, 1000/gameConfig.fps);
       }
     </script>
   </body>
