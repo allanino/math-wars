@@ -161,28 +161,6 @@
         this.draw = function() {
           // Draw asteroid
           ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
-
-          // Draw aim
-          ctx.beginPath();
-          ctx.arc(this.x + this.size/2, this.y + this.size/2, gameConfig.aimSize, 0, 2 * Math.PI, false);
-          ctx.fillStyle = 'rgba(0,100,0,0.25)';
-          ctx.fill();
-          ctx.lineWidth = 5;
-          ctx.moveTo(this.x + this.size/2 - 60, this.y + this.size/2);
-          ctx.lineTo(this.x + this.size/2 - 45,this.y + this.size/2);
-          ctx.moveTo(this.x + this.size/2 + 60, this.y + this.size/2);
-          ctx.lineTo(this.x + this.size/2 + 45,this.y + this.size/2);
-          ctx.moveTo(this.x + this.size/2, this.y + this.size/2 - 60);
-          ctx.lineTo(this.x + this.size/2, this.y + this.size/2 - 45);
-          ctx.moveTo(this.x + this.size/2, this.y + this.size/2 + 60);
-          ctx.lineTo(this.x + this.size/2, this.y + this.size/2 + 45);
-          ctx.strokeStyle = 'green';
-          ctx.stroke();
-
-          ctx.font = "bold " + gameConfig.aimSize/2 + "px Courier";
-          ctx.fillStyle = "DarkGreen";
-          ctx.fillText(this.line1, this.x + this.size/2 - 30, this.y + this.size/2);
-          ctx.fillText(this.line2, this.x + this.size/2 - 30, this.y + this.size/2 + 25);
         },
 
         this.update = function() {
@@ -213,10 +191,7 @@
         return 0;
       }
 
-      for(var i = 1; i <= 3; i++){
-        gameState.asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), Math.random()*50));
-      };
-
+      // Functions to shake screen when hit
       function preShake() {
         gameState.shakeFrame -= 1;
         ctx.save();
@@ -229,6 +204,48 @@
         ctx.restore();
       }
 
+      // Function to draw an aim on the closest asteroid
+      var aimX = newAimX = ctx.canvas.width/2;
+      var aimY = newAimY = ctx.canvas.height/2;
+      var closestAsteroid;
+      function drawAim(){
+          closestAsteroid = gameState.asteroids.slice(-1)[0];
+
+          // Find center of closest asteroid
+          newAimX = closestAsteroid.x + closestAsteroid.size/2;
+          newAimY = closestAsteroid.y + closestAsteroid.size/2;
+
+          // Smoothly moves the current center towards the new one;
+          aimX = aimX + (newAimX - aimX)/2;
+          aimY = aimY + (newAimY - aimY)/2;
+
+          ctx.beginPath();
+
+          // Draw aim circle
+          ctx.arc(aimX, aimY, gameConfig.aimSize, 0, 2 * Math.PI, false);
+          // Fill aim interior
+          ctx.fillStyle = 'rgba(0,100,0,0.25)';
+          ctx.fill();
+          // Draw aim ticks
+          ctx.lineWidth = 5;
+          ctx.moveTo(aimX - 60, aimY);
+          ctx.lineTo(aimX - 45, aimY);
+          ctx.moveTo(aimX + 60, aimY);
+          ctx.lineTo(aimX + 45, aimY);
+          ctx.moveTo(aimX, aimY - 60);
+          ctx.lineTo(aimX, aimY - 45);
+          ctx.moveTo(aimX, aimY + 60);
+          ctx.lineTo(aimX, aimY + 45);
+          ctx.strokeStyle = 'green';
+          ctx.stroke();
+          // Draw operation
+          ctx.font = "bold " + gameConfig.aimSize/2 + "px Courier";
+          ctx.fillStyle = "DarkGreen";
+          ctx.fillText(closestAsteroid.line1, aimX - 30, aimY);
+          ctx.fillText(closestAsteroid.line2, aimX - 30, aimY + 25);
+      }
+
+      // Update all objects
       function update() {
         gameState.asteroids.forEach(function(asteroid) {
           asteroid.update();
@@ -238,8 +255,12 @@
         if(gameState.asteroids.length < 3){
           gameState.asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), 10));
         };
+
+        // Put greater asteroids in front
+        gameState.asteroids.sort(compareAsteroidSizes);
       };
 
+      // Draw moving objects
       function draw() {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -250,8 +271,6 @@
         ctx.fillText("Score: " + gameState.score, 30, 60);
         ctx.fillStyle = "green";
         ctx.fillText("Input: " + gameState.input, 30, 120);
-        // Put greater asteroids in front
-        gameState.asteroids.sort(compareAsteroidSizes);
 
         // Shake screen if recently hit
         if(gameState.shakeFrame > 0){
@@ -265,6 +284,7 @@
             asteroid.draw();
           });
         };
+        drawAim();
       }
 
       // Main loop
