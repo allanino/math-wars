@@ -118,6 +118,7 @@
             gameState.asteroids.reverse().forEach(function(asteroid) {
               if(asteroid.number == parseInt(gameState.input)){
                   asteroid.hit();
+                  break; // Just hit one asteroid per shot
               }
             });
             gameState.input = "";
