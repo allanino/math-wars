@@ -107,23 +107,24 @@
           // Handle numbers
           if ( e.keyCode <= 57 && e.keyCode >= 48) {
             gameState.input += e.keyCode - 48;
-          }
+          };
           // Handle numpad numbers
           if ( e.keyCode <= 105 && e.keyCode >= 96) {
             gameState.input += e.keyCode - 96;
-          }
+          };
           //handle enter
           if ( e.keyCode == 13 ) {
             // Reverse to get bigger asteroids first
-            gameState.asteroids.reverse().forEach(function(asteroid) {
-              if(asteroid.number == parseInt(gameState.input)){
-                  asteroid.hit();
-                  break; // Just hit one asteroid per shot
+            for(var i = gameState.asteroids.length - 1; i >= 0; i--){
+              if(gameState.asteroids[i].number == parseInt(gameState.input)){
+                gameState.asteroids[i].hit();
+                break;
               }
-            });
+            };
             gameState.input = "";
-          }
-        }
+          };
+        };
+
         //handle esc
         if ( e.keyCode == 27 ) {
           if(gameState.paused){
@@ -146,7 +147,7 @@
         this.scalingFactor = gameConfig.scalingFactor + Math.random()*0;
 
         // Operation to perform
-        this.text = mul([1,2,3,4,5,6,7,8,9], 1);
+        this.text = mul([2], 1);
         this.number = eval(this.text);
 
         // Get lines to display
