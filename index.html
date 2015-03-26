@@ -50,14 +50,14 @@
     </script>
 
     <script>
-      // Draw backgroud
+      // Draw the stars on the backgroud
       var canvas = document.getElementById('layer1');
       var ctx = canvas.getContext('2d');
       ctx.canvas.width  = window.innerWidth ;
       ctx.canvas.height = window.innerHeight;
 
       ctx.fillStyle="#EEEEEE";
-      for(var i = 1; i <= 100; i++){
+      for(var i = 1; i <= 200; i++){
         ctx.fillRect(Math.random()*ctx.canvas.width, Math.random()*ctx.canvas.height,1, 1);
       }
 
