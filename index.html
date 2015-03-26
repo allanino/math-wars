@@ -4,6 +4,12 @@
   <title>Math Wars!</title>
   <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Source+Sans+Pro">
     <style>
+      * { margin:0; padding:0; } /* to remove the top and left whitespace */
+
+      html, body { width:100%; height:100%; overflow: hidden} /* just to be sure these are full screen*/
+
+      canvas { display:block; }
+
       body {
           font-family: 'Source Sans Pro', 'Arial';
           font-size: 24px;
@@ -18,51 +24,168 @@
         user-select: none;
         outline: none;
         -webkit-tap-highlight-color: rgba(255, 255, 255, 0); /* mobile webkit */
-        background-color: #000000;
       }
     </style>
   </head>
 
   <body>
-    <canvas id="myCanvas" width="600" height="400"></canvas>
+    <div style="position: relative;">
+   <canvas id="layer1" width="100" height="100"
+     style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+   <canvas id="layer2" width="100" height="100"
+     style="position: absolute; left: 0; top: 0; z-index: 1; opacity:1.0"></canvas>
+  </div>
 
     <script>
-      var canvas = document.getElementById('myCanvas');
+      // Dirty hacks
+
+      // Prevent browser to using backspace
+      function preventBackspaceHandler(evt) {
+          evt = evt || window.event;
+          if (evt.keyCode == 8) {
+              return false;
+          }
+      }
+      document.onkeydown = preventBackspaceHandler;
+    </script>
+
+    <script>
+      // Draw the stars on the backgroud
+      var canvas = document.getElementById('layer1');
       var ctx = canvas.getContext('2d');
+      ctx.canvas.width  = window.innerWidth ;
+      ctx.canvas.height = window.innerHeight;
+
+      ctx.fillStyle="#EEEEEE";
+      for(var i = 1; i <= 200; i++){
+        ctx.fillRect(Math.random()*ctx.canvas.width, Math.random()*ctx.canvas.height,1, 1);
+      }
+
+      // Get main canvas
+      canvas = document.getElementById('layer2');
+      ctx = canvas.getContext('2d');
       ctx.canvas.width  = window.innerWidth;
       ctx.canvas.height = window.innerHeight;
 
+      // Functions to generate mathematical operations
+      function sum(length){
+        return Math.round(Math.random()*Math.pow(10, length)) + " + " + Math.round(Math.random()*Math.pow(10, length));
+      }
+
+      function mul(numberArr, length){
+        return numberArr[Math.round(Math.random()*(numberArr.length - 1))] + " * " + Math.round(Math.random()*Math.pow(10, length));
+      }
+
       var imageAsteroid = new Image();
+      imageAsteroid.src = 'asteroid.svg'
 
-      // I have to figure out copyright of images. At least I'm showing the original sources. None are mine.
-      imageAsteroid.src = 'http://www.aqueduct-santa-dash.co.uk/img/items/asteroid.svg'
+      var gameState = {
+        damage: 0,
+        score: 0,
+        input: "", // User text input: the answer to the calculations
+        paused: false,
+        shakeFrame: -1, // Counter to keep track if we should shake the screen
+        asteroids: [] // List with active asteroids
+      };
 
+      var gameConfig = {
+        fps: 30,
+        asteroidsMaximumSize: 700, // Size in which we consider we are hitted
+        scalingFactor: 1.015, // Effectively sets the speed of the asteroids
+        framesToShake: 7, // For how many frames the screen is shaked when hitted
+        aimSize: 60
+      }
 
-      var FPS = 30;
-      setInterval(function() {
-        update();
-        draw();
-      }, 1000/FPS);
+      // Do things when key is pressed
+      function doKeyDown(e) {
 
-      var scalingFactor = 1.03;
-      var maximumSize = 600;
+        if(!gameState.paused){
+          //  backspace
+          if ( e.keyCode == 8 ) {
+            gameState.input = gameState.input.substring(0, gameState.input.length - 1);
+          };
+          // Handle numbers
+          if ( e.keyCode <= 57 && e.keyCode >= 48) {
+            gameState.input += e.keyCode - 48;
+          };
+          // Handle numpad numbers
+          if ( e.keyCode <= 105 && e.keyCode >= 96) {
+            gameState.input += e.keyCode - 96;
+          };
+          //handle enter
+          if ( e.keyCode == 13 ) {
+            // Reverse to get bigger asteroids first
+            for(var i = gameState.asteroids.length - 1; i >= 0; i--){
+              if(gameState.asteroids[i].number == parseInt(gameState.input)){
+                gameState.asteroids[i].hit();
+                break;
+              }
+            };
+            gameState.input = "";
+          };
+        };
 
-      function Asteroid(x, y, size) {
-        this.size = size;
-        this.x = x;
-        this.y = y;
-        this.scalingFactor = scalingFactor + Math.random()*0;
+        //handle esc
+        if ( e.keyCode == 27 ) {
+          if(gameState.paused){
 
-        this.draw = function() {
-          ctx.drawImage(imageAsteroid, this.x, this.y, this.size, this.size);
-        },
-        this.update = function() {
-          this.size *= this.scalingFactor;
+          } else {
+
+          };
+          gameState.paused = !gameState.paused;
         }
       }
 
+      window.addEventListener( "keydown", doKeyDown, false);
 
-      function compareSizes(a, b) {
+      // Asteroid class
+      function Asteroid(x, y, size) {
+        this.image = imageAsteroid
+        this.size = size;
+        this.x = x;
+        this.y = y;
+        this.scalingFactor = gameConfig.scalingFactor + Math.random()*0;
+
+        // Operation to perform
+        this.text = mul([2], 1);
+        this.number = eval(this.text);
+
+        // Get lines to display
+        var n = this.text.split(" * ");
+        this.line1 = n[1].toString();
+        this.line2 = n[0].toString();
+        if(this.line1.length > this.line2.length){
+          this.line2 = ("      " + this.line2).slice(-this.line1.length);
+        }
+        this.line1 = " " + this.line1;
+        this.line2 = "x" + this.line2;
+
+        this.draw = function() {
+          // Draw asteroid
+          ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
+        },
+
+        this.update = function() {
+          this.size *= this.scalingFactor;
+          if(this.size > gameConfig.asteroidsMaximumSize){
+            // Remove itself from asteroids list
+            gameState.asteroids.splice(gameState.asteroids.indexOf(this), 1);
+
+            // If size is big and is alive, we're hit!!
+            if(this.image == imageAsteroid){
+              gameState.damage += 1
+              gameState.shakeFrame = gameConfig.framesToShake;
+            }
+          }
+        },
+
+        this.hit= function() {
+          gameState.score += 1;
+          gameState.asteroids.splice(gameState.asteroids.indexOf(this), 1);
+        };
+      }
+
+      function compareAsteroidSizes(a, b) {
         if (a.size < b.size)
            return -1;
         if (a.size > b.size)
@@ -70,12 +193,9 @@
         return 0;
       }
 
-      var asteroids = [];
-      asteroids.push(new Asteroid(300,300,30));
-      asteroids.push(new Asteroid(0,0,50));
-      asteroids.push(new Asteroid(0,200,100));
-
+      // Functions to shake screen when hit
       function preShake() {
+        gameState.shakeFrame -= 1;
         ctx.save();
         var dx = Math.random()*20;
         var dy = Math.random()*20;
@@ -86,42 +206,102 @@
         ctx.restore();
       }
 
-      var shakeFrames = 7;
-      var toShake = shakeFrames + 1;
+      // Function to draw an aim on the closest asteroid
+      var aimX = newAimX = ctx.canvas.width/2;
+      var aimY = newAimY = ctx.canvas.height/2;
+      var closestAsteroid;
+      function drawAim(){
+          closestAsteroid = gameState.asteroids.slice(-1)[0];
+
+          // Find center of closest asteroid
+          newAimX = closestAsteroid.x + closestAsteroid.size/2;
+          newAimY = closestAsteroid.y + closestAsteroid.size/2;
+
+          // Smoothly moves the current center towards the new one;
+          aimX = aimX + (newAimX - aimX)/2;
+          aimY = aimY + (newAimY - aimY)/2;
+
+          ctx.beginPath();
+
+          // Draw aim circle
+          ctx.arc(aimX, aimY, gameConfig.aimSize, 0, 2 * Math.PI, false);
+          // Fill aim interior
+          ctx.fillStyle = 'rgba(0,100,0,0.25)';
+          ctx.fill();
+          // Draw aim ticks
+          ctx.lineWidth = 5;
+          ctx.moveTo(aimX - 60, aimY);
+          ctx.lineTo(aimX - 45, aimY);
+          ctx.moveTo(aimX + 60, aimY);
+          ctx.lineTo(aimX + 45, aimY);
+          ctx.moveTo(aimX, aimY - 60);
+          ctx.lineTo(aimX, aimY - 45);
+          ctx.moveTo(aimX, aimY + 60);
+          ctx.lineTo(aimX, aimY + 45);
+          ctx.strokeStyle = 'green';
+          ctx.stroke();
+          // Draw operation
+          ctx.font = "bold " + gameConfig.aimSize/2 + "px Courier";
+          ctx.fillStyle = "DarkGreen";
+          ctx.fillText(closestAsteroid.line1, aimX - 30, aimY);
+          ctx.fillText(closestAsteroid.line2, aimX - 30, aimY + 25);
+      }
+
+      // Update all objects
       function update() {
-        asteroids.forEach(function(asteroid) {
+        gameState.asteroids.forEach(function(asteroid) {
           asteroid.update();
         });
 
-        // Remove too big asteroids
-        toShake += 1;
-        for (var i = asteroids.length -1; i >= 0; i--) {
-          if (asteroids[i].size > maximumSize) {
-            asteroids.splice(i, 1);
-            toShake = 0;
-            asteroids.push(new Asteroid(Math.random()*(ctx.canvas.width - 200), Math.random()*(ctx.canvas.height - 200), Math.random()*100));
-          }
+        // Add more asteroids if needed
+        if(gameState.asteroids.length < 3){
+          gameState.asteroids.push(new Asteroid(200 + Math.random()*(ctx.canvas.width - 400), 200 + Math.random()*(ctx.canvas.height - 400), 10));
         };
+
+        // Put greater asteroids in front
+        gameState.asteroids.sort(compareAsteroidSizes);
       };
 
+      // Draw moving objects
       function draw() {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-        // Put greater asteroids in front
-        asteroids.sort(compareSizes);
+        ctx.font = "bold 24px Arial";
+        ctx.fillStyle = "purple";
+        ctx.fillText("Damage: " + gameState.damage, 30, 30);
+        ctx.fillStyle = "blue";
+        ctx.fillText("Score: " + gameState.score, 30, 60);
+        ctx.fillStyle = "green";
+        ctx.fillText("Input: " + gameState.input, 30, 120);
 
         // Shake screen if recently hit
-        if(toShake <= shakeFrames){
+        if(gameState.shakeFrame > 0){
           preShake();
-          asteroids.forEach(function(asteroid) {
+          gameState.asteroids.forEach(function(asteroid) {
             asteroid.draw();
           });
           postShake();
         } else {
-          asteroids.forEach(function(asteroid) {
+          gameState.asteroids.forEach(function(asteroid) {
             asteroid.draw();
           });
-        }
+        };
+        drawAim();
+      }
+
+      // Main loop
+      window.onload = function(){
+        // Play music!
+        var music = new Audio('soundtrack.ogg');
+        music.loop = true;
+        music.play();
+
+        setInterval(function() {
+          if(!gameState.paused){
+            update();
+            draw();
+          }
+        }, 1000/gameConfig.fps);
       }
     </script>
   </body>
