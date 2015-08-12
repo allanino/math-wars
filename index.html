@@ -134,7 +134,7 @@
           };
           gameState.paused = !gameState.paused;
         }
-      }
+      };
 
       window.addEventListener( "keydown", doKeyDown, false);
 
@@ -159,31 +159,31 @@
         }
         this.line1 = " " + this.line1;
         this.line2 = "x" + this.line2;
+      };
 
-        this.draw = function() {
-          // Draw asteroid
-          ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
-        },
+      Asteroid.prototype.draw = function() {
+        // Draw asteroid
+        ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
+      };
 
-        this.update = function() {
-          this.size *= this.scalingFactor;
-          if(this.size > gameConfig.asteroidsMaximumSize){
-            // Remove itself from asteroids list
-            gameState.asteroids.splice(gameState.asteroids.indexOf(this), 1);
-
-            // If size is big and is alive, we're hit!!
-            if(this.image == imageAsteroid){
-              gameState.damage += 1
-              gameState.shakeFrame = gameConfig.framesToShake;
-            }
-          }
-        },
-
-        this.hit= function() {
-          gameState.score += 1;
+      Asteroid.prototype.update = function() {
+        this.size *= this.scalingFactor;
+        if(this.size > gameConfig.asteroidsMaximumSize){
+          // Remove itself from asteroids list
           gameState.asteroids.splice(gameState.asteroids.indexOf(this), 1);
-        };
-      }
+
+          // If size is big and is alive, we're hit!!
+          if(this.image == imageAsteroid){
+            gameState.damage += 1
+            gameState.shakeFrame = gameConfig.framesToShake;
+          }
+        }
+      };
+
+      Asteroid.prototype.hit = function() {
+        gameState.score += 1;
+        gameState.asteroids.splice(gameState.asteroids.indexOf(this), 1);
+      };
 
       function compareAsteroidSizes(a, b) {
         if (a.size < b.size)
@@ -191,7 +191,7 @@
         if (a.size > b.size)
           return 1;
         return 0;
-      }
+      };
 
       // Functions to shake screen when hit
       function preShake() {
@@ -200,11 +200,11 @@
         var dx = Math.random()*20;
         var dy = Math.random()*20;
         ctx.translate(dx, dy);
-      }
+      };
 
       function postShake() {
         ctx.restore();
-      }
+      };
 
       // Function to draw an aim on the closest asteroid
       var aimX = newAimX = ctx.canvas.width/2;
@@ -218,8 +218,8 @@
           newAimY = closestAsteroid.y + closestAsteroid.size/2;
 
           // Smoothly moves the current center towards the new one;
-          aimX = aimX + (newAimX - aimX)/2;
-          aimY = aimY + (newAimY - aimY)/2;
+          aimX = aimX + (newAimX - aimX)/4;
+          aimY = aimY + (newAimY - aimY)/4;
 
           ctx.beginPath();
 
